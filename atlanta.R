@@ -1,9 +1,11 @@
-atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/Crime in Atlanta.csv', header = TRUE, stringsAsFactors = FALSE)
+atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_crime.csv', header = TRUE, stringsAsFactors = FALSE)
+atlanta <- atlanta[nchar(atlanta$UCR.Literal) > 2,]
+atlanta <- atlanta[atlanta$UCR.Literal != 'Morning Watch' & atlanta$UCR.Literal != 'Evening Watch',]
 atlanta$observations <- rep(1, nrow(atlanta))
-atlanta$occur_date <- as.Date(atlanta$occur_date,'%m/%d/%Y')
+atlanta$occur_date <- as.Date(atlanta$Report.Date)
 crime_by_date <- aggregate(observations ~ occur_date, atlanta, sum)
-crime_by_date <- crime_by_date[crime_by_date$occur_date >= '2017-01-01',]
-plot(ts(crime_by_date$observations, frequency = 365.25, start = c(2017,1)))
+crime_by_date <- crime_by_date[crime_by_date$occur_date < '2017-01-01',]
+plot(ts(crime_by_date$observations, frequency = 365.25, start = c(2012,1)))
 weather_atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_weather.csv', header = TRUE, stringsAsFactors = FALSE)
 weather_atlanta$DATE <- as.Date(weather_atlanta$DATE)
 daily_weather <- aggregate(DAILYMaximumDryBulbTemp ~ DATE, weather_atlanta, function(x){max(na.omit(x))})
