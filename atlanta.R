@@ -4,8 +4,8 @@ atlanta <- atlanta[atlanta$UCR.Literal != 'Morning Watch' & atlanta$UCR.Literal 
 atlanta$observations <- rep(1, nrow(atlanta))
 atlanta$occur_date <- as.Date(atlanta$Report.Date)
 crime_by_date <- aggregate(observations ~ occur_date, atlanta, sum)
-crime_by_date <- crime_by_date[crime_by_date$occur_date < '2017-01-01',]
-plot(ts(crime_by_date$observations, frequency = 365.25, start = c(2012,1)))
+#crime_by_date <- crime_by_date[crime_by_date$occur_date < '2017-01-01',]
+plot(ts(crime_by_date$observations, frequency = 365.25, start = c(2013,1)))
 weather_atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_weather.csv', header = TRUE, stringsAsFactors = FALSE)
 weather_atlanta$DATE <- as.Date(weather_atlanta$DATE)
 daily_weather <- aggregate(DAILYMaximumDryBulbTemp ~ DATE, weather_atlanta, function(x){max(na.omit(x))})
@@ -95,7 +95,7 @@ rm(vancouver)
 #Baton Rouge
 baton_rouge <- read.csv('~/Downloads/Datasets for analysis/Crime Data/Baton_Rouge_Crime_Incidents.csv', header = TRUE, stringsAsFactors = FALSE)
 baton_rouge$OFFENSE.DATE <- as.Date(baton_rouge$OFFENSE.DATE, '%m/%d/%Y')
-baton_rouge <- baton_rouge[baton_rouge$OFFENSE.DATE >= '2012-01-01' & baton_rouge$OFFENSE.DATE <= '2017-12-31',]
+baton_rouge <- baton_rouge[baton_rouge$OFFENSE.DATE >= '2012-01-01' & baton_rouge$OFFENSE.DATE <= '2017-08-31',]
 baton_rouge$incident <- rep(1, nrow(baton_rouge))
 br_crime_by_date <- aggregate(incident ~ OFFENSE.DATE, baton_rouge, sum)
 plot(ts(br_crime_by_date$incident, frequency = 365.25, start = c(2011,1)))
