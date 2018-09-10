@@ -4,23 +4,19 @@ atlanta <- atlanta[atlanta$UCR.Literal != 'Morning Watch' & atlanta$UCR.Literal 
 atlanta$observations <- rep(1, nrow(atlanta))
 atlanta$occur_date <- as.Date(atlanta$Report.Date)
 crime_by_date <- aggregate(observations ~ occur_date, atlanta, sum)
+write.csv(crime_by_date,'/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_daily_crime.csv')
+
 #crime_by_date <- crime_by_date[crime_by_date$occur_date < '2017-01-01',]
-plot(ts(crime_by_date$observations, frequency = 365.25, start = c(2013,1)))
-weather_atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_weather.csv', header = TRUE, stringsAsFactors = FALSE)
+plot(ts(crime_by_date$observations, frequency = 365, start = c(2013,1,1)))
+weather_atlanta <- read.csv('/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_weather_12_17.csv', header = TRUE, stringsAsFactors = FALSE)
 weather_atlanta$DATE <- as.Date(weather_atlanta$DATE)
 daily_weather <- aggregate(DAILYMaximumDryBulbTemp ~ DATE, weather_atlanta, function(x){max(na.omit(x))})
 plot(ts(daily_weather$DAILYMaximumDryBulbTemp))
 crime_weather <- merge(crime_by_date, daily_weather, by.x = 'occur_date', by.y = 'DATE')
-crime_weather$days <- rep(1, nrow(crime_weather))
-weather <- aggregate(days ~ DAILYMaximumDryBulbTemp, crime_weather, sum)
-crime <- aggregate(crime_weather$observations ~ DAILYMaximumDryBulbTemp, crime_weather, mean)
-plot(x = weather$DAILYMaximumDryBulbTemp, y = crime$`crime_weather$observations`, xlim = c(0,100), ylim = c(40,85))
-wc <- data.frame(cbind(weather$DAILYMaximumDryBulbTemp, crime$`crime_weather$observations`))
-
-lm_crime <- lm(wc$X2 ~ wc$X1, wc)
+plot(x = crime_weather$DAILYMaximumDryBulbTemp, y = crime_weather$observations, xlim = c(0,110), ylim = c(0,140))
+cor(crime_weather$DAILYMaximumDryBulbTemp, crime_weather$observations)
+lm_crime <- lm(crime_weather$observations ~ crime_weather$DAILYMaximumDryBulbTemp)
 summary(lm_crime)
-
-cor(wc$X1,wc$X2)
 #0.5127. The correlation between temperature and no of crimes committed is 0.5127.
 rm(atlanta)
 
@@ -39,9 +35,8 @@ plot(ts(weather_b$TMAX))
 b_crime_weather <- merge(b_crime_by_date, weather_b, by.x = 'CrimeDate', by.y = 'DATE')
 # b_crime_weather$days <- rep(1, nrow(b_crime_weather))
 # b_weather <- aggregate(days ~ TMAX, b_crime_weather, sum)
-b_crime <- aggregate(Total.Incidents ~ TMAX, b_crime_weather, mean)
-plot(x = b_crime$TMAX, b_crime$Total.Incidents)
-lm_crime_baltimore <- lm(Total.Incidents ~ TMAX,b_crime)
+plot(x = b_crime_weather$TMAX, y = b_crime_weather$Total.Incidents, xlim = c(0,120), ylim = c(0,250))
+lm_crime_baltimore <- lm(Total.Incidents ~ TMAX,b_crime_weather)
 summary(lm_crime_baltimore)
 
 cor(b_crime$Total.Incidents, b_crime$TMAX)
@@ -67,7 +62,8 @@ library(weathercan)
 library(rclimateca)
 # van_stations <- stations_search("Vancouver", interval = "day")
 # vancouver_weather <- weather_dl(station_ids = 895, start = '2012-01-01', end = '2017-07-13', interval = 'day')
-ec_climate_geosearch_locations("Vancouver", timeframe = 'daily', year = 2012:2017)
+
+#ec_climate_geosearch_locations("Vancouver", timeframe = 'daily', year = 2012:2017)
 vancouver_weather <- ec_climate_data("VANCOUVER HARBOUR CS BC", timeframe = "daily", start = "2012-01-01", end = "2017-07-13")
 library(weathermetrics)
 vancouver_weather$max_temp_f <- celsius.to.fahrenheit(vancouver_weather$max_temp_c)
@@ -84,12 +80,11 @@ date_range[!date_range %in% v_weather$date]
 library(zoo)
 v_weather$max_temp_f <- na.locf(v_weather$max_temp_f)
 v_crime_weather <- merge(v_crime_by_date, v_weather, by.x = 'date', by.y = 'date_range')
-v_crime <- aggregate(incident ~ max_temp_f, v_crime_weather, mean)
-plot(x = v_crime$max_temp_f, y = v_crime$incident)
-lm_crime_vancouver <- lm(incident ~ max_temp_f, v_crime)
+plot(x = v_crime_weather$max_temp_f, y = v_crime_weather$incident, xlim = c(0,90), ylim = c(0,160))
+lm_crime_vancouver <- lm(incident ~ max_temp_f, v_crime_weather)
 summary(lm_crime_vancouver)
-cor(v_crime$max_temp_f, v_crime$incident)
-#The correlation in Vancouver is 0.5977
+cor(v_crime_weather$max_temp_f, v_crime_weather$incident)
+#The correlation in Vancouver is 0.29629
 rm(vancouver)
 
 #Baton Rouge
@@ -107,13 +102,14 @@ rm(baton_rouge_weather)
 br_daily_weather <- br_daily_weather[br_daily_weather$DATE <= '2017-08-31',]
 br_crime_by_date <- br_crime_by_date[br_crime_by_date$OFFENSE.DATE <= '2017-08-31',]
 br_crime_weather <- merge(br_crime_by_date, br_daily_weather, by.x = 'OFFENSE.DATE', by.y = 'DATE')
-br_crime <- aggregate(incident ~ DAILYMaximumDryBulbTemp, br_crime_weather, mean)
-plot(x = br_crime$DAILYMaximumDryBulbTemp, y = br_crime$incident)
-lm_crime_baton_rouge <- lm(incident ~ DAILYMaximumDryBulbTemp, br_crime)
+
+plot(x = br_crime_weather$DAILYMaximumDryBulbTemp, y = br_crime_weather$incident, xlim = c(0,110), ylim = c(0,255))
+lm_crime_baton_rouge <- lm(incident ~ DAILYMaximumDryBulbTemp, br_crime_weather)
 summary(lm_crime_baton_rouge)
 
-cor(br_crime$DAILYMaximumDryBulbTemp, br_crime$incident)
-#The correlation between the temperature and mean crimes committed in Baton Rouge, is 0.834.
+cor(br_crime_weather$DAILYMaximumDryBulbTemp, br_crime_weather$incident)
+#The correlation between the temperature and mean crimes committed in Baton Rouge, is 0.188992.
+rm(baton_rouge)
 chicago <- read.csv('~/Downloads/Datasets for analysis/Crime Data/Chicago_Crimes_2012_to_2017.csv', header = TRUE, stringsAsFactors = FALSE)
 chicago$Date <- as.Date(chicago$Date,'%m/%d/%Y')
 chicago$incident <- rep(1, nrow(chicago))
@@ -130,14 +126,13 @@ c_daily_weather$DAILYMaximumDryBulbTemp <- na.locf(c_daily_weather$DAILYMaximumD
 c_daily_weather[is.na(c_daily_weather$DAILYMaximumDryBulbTemp),]
 plot(ts(c_daily_weather$DAILYMaximumDryBulbTemp))
 c_crime_weather <- merge(c_crime_by_date, c_daily_weather, by.x = 'Date', by.y = 'DATE')
-c_crime <- aggregate(incident ~ DAILYMaximumDryBulbTemp, c_crime_weather, mean)
-plot(x = c_crime$DAILYMaximumDryBulbTemp, y = c_crime$incident)
+plot(x = c_crime_weather$DAILYMaximumDryBulbTemp, y = c_crime_weather$incident, xlim = c(0,110), ylim = c(0,1400))
 
-lm_crime_chicago <- lm(incident ~ DAILYMaximumDryBulbTemp, c_crime)
+lm_crime_chicago <- lm(incident ~ DAILYMaximumDryBulbTemp, c_crime_weather)
 summary(lm_crime_chicago)
 
-cor(c_crime$DAILYMaximumDryBulbTemp, c_crime$incident)
-#The correlation in Chicago is fucking 0.948. WHAT THE HELL?
+cor(c_crime_weather$DAILYMaximumDryBulbTemp, c_crime_weather$incident)
+#The correlation in Chicago is fucking 0.5792
 
 rm(chicago)
 
@@ -152,14 +147,14 @@ minneapolis_weather$DATE <- as.Date(minneapolis_weather$DATE)
 m_weather <- aggregate(TMAX ~ DATE, minneapolis_weather, max)
 plot(ts(m_weather$TMAX))
 m_crime_weather <- merge(m_crime_by_date, m_weather, by.x = 'BeginDate', by.y = 'DATE')
-m_crime <- aggregate(incident ~ TMAX, m_crime_weather,mean)
-plot(x = m_crime$TMAX, y = m_crime$incident)
+plot(x = m_crime_weather$TMAX, y = m_crime_weather$incident, xlim = c(0, 110), ylim = c(0,110))
 
-lm_crime_minneapolis <- lm(incident ~ TMAX,m_crime)
+lm_crime_minneapolis <- lm(incident ~ TMAX,m_crime_weather)
 summary(lm_crime_minneapolis)
 
-cor(m_crime$TMAX, m_crime$incident)
-#Correlation in Minneapolis is 0.8853
+cor(m_crime_weather$TMAX, m_crime_weather$incident)
+#Correlation in Minneapolis is 0.6024
+rm(minneapolis)
 
 #Philly
 philly <- read.csv('~/Downloads/Datasets for analysis/Crime Data/philly_crime.csv', header = TRUE, stringsAsFactors = FALSE)
@@ -176,16 +171,15 @@ philly_weather$DATE <- as.Date(philly_weather$DATE)
 p_daily_weather <- aggregate(DAILYMaximumDryBulbTemp ~ DATE, philly_weather, function(x){max(na.omit(x))})
 plot(ts(p_daily_weather$DAILYMaximumDryBulbTemp))
 p_crime_weather <- merge(p_crime_by_date, p_daily_weather, by.x = 'Dispatch_Date', by.y = 'DATE')
-p_crime <- aggregate(incident ~ DAILYMaximumDryBulbTemp, p_crime_weather, mean)
-plot(x = p_crime$DAILYMaximumDryBulbTemp, y = p_crime$incident)
+plot(x = p_crime_weather$DAILYMaximumDryBulbTemp, y = p_crime_weather$incident)
 
-lm_crime_philly <- lm(incident ~ DAILYMaximumDryBulbTemp, p_crime)
+lm_crime_philly <- lm(incident ~ DAILYMaximumDryBulbTemp, p_crime_weather)
 summary(lm_crime_philly)
 
-cor(p_crime$DAILYMaximumDryBulbTemp, p_crime$incident)
-#Correlation is 0.8468. The fuck is going on?
+cor(p_crime_weather$DAILYMaximumDryBulbTemp, p_crime_weather$incident)
+#Correlation is 0.5697
 
-nyc <- read.csv('~/Downloads/Datasets for analysis/Crime Data/crimes-new-york-city/NYPD_Complaint_Data_Historic.csv', header = TRUE, stringsAsFactors = FALSE)
+nyc <- read.csv('~/Downloads/Datasets for analysis/Crime Data/new_york_crime.csv', header = TRUE, stringsAsFactors = FALSE)
 nyc$CMPLNT_FR_DT <- as.Date(nyc$CMPLNT_FR_DT,'%m/%d/%Y')
 nyc$RPT_DT <- as.Date(nyc$RPT_DT,'%m/%d/%Y')
 nyc <- nyc[nyc$RPT_DT >= '2013-11-01',]
