@@ -15,9 +15,9 @@ daily_weather <- aggregate(DAILYMaximumDryBulbTemp ~ DATE, weather_atlanta, func
 plot(ts(daily_weather$DAILYMaximumDryBulbTemp))
 crime_weather <- merge(crime_by_date, daily_weather, by.x = 'occur_date', by.y = 'DATE')
 plot(x = crime_weather$DAILYMaximumDryBulbTemp, y = crime_weather$observations)
-write.csv(crime_weather,'/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_crime_vs_weather.csv')
+#write.csv(crime_weather,'/home/ab/Downloads/Datasets for analysis/Crime Data/atlanta_crime_vs_weather.csv')
 cor(crime_weather$DAILYMaximumDryBulbTemp, crime_weather$observations)
-lm_crime <- lm(crime_weather$observations ~ crime_weather$DAILYMaximumDryBulbTemp)
+  lm_crime <- lm(crime_weather$observations ~ crime_weather$DAILYMaximumDryBulbTemp)
 summary(lm_crime)
 #0.5127. The correlation between temperature and no of crimes committed is 0.5127.
 rm(atlanta)
@@ -28,13 +28,16 @@ baltimore <- baltimore[baltimore$CrimeDate <= '2017-01-01',]
 b_crime_by_date <- aggregate(Total.Incidents ~ CrimeDate,  baltimore, sum)
 plot(ts(b_crime_by_date$Total.Incidents))
 
+
 #write.csv(b_crime_by_date,'/home/ab/Downloads/Datasets for analysis/Crime Data/baltimore_crime_by_date.csv')
 library(outliers)
 scores(b_crime_by_date$Total.Incidents, type = "t", prob = 0.995)
 b_crime_by_date$Total.Incidents[which(scores(b_crime_by_date$Total.Incidents, type = "t", prob = 0.999) == 1)] <- median(b_crime_by_date$Total.Incidents)
 
+library(tidyr)
 b_crime_type_by_date <- aggregate(Total.Incidents ~ Description + CrimeDate,  baltimore, sum)
-plot(ts(b_crime_type_by_date$Total.Incidents[b_crime_type_by_date$Description == 'AGG. ASSAULT']))
+plot(ts(b_crime_type_by_date$Total.Incidents[b_crime_type_by_date$Description == 'AUTO THEFT']))
+
 
 weather_baltimore <- read.csv('~/Downloads/Datasets for analysis/Crime Data/baltimore_weather.csv', header = TRUE, stringsAsFactors = FALSE)
 weather_baltimore$DATE <- as.Date(weather_baltimore$DATE)
@@ -48,21 +51,21 @@ b_crime_weather <- merge(b_crime_by_date, weather_b, by.x = 'CrimeDate', by.y = 
 #write.csv(b_crime_weather,'~/Downloads/Datasets for analysis/Crime Data/baltimore_crime_vs_weather.csv')
 # b_crime_weather$days <- rep(1, nrow(b_crime_weather))
 # b_weather <- aggregate(days ~ TMAX, b_crime_weather, sum)
-plot(x = b_crime_weather$TMAX, y = b_crime_weather$Total.Incidents, xlim = c(0,120), ylim = c(0,250))
-lm_crime_baltimore <- lm(Total.Incidents ~ TMAX,b_crime_weather)
+plot(x = b_crime_weather$HOURLYDRYBULBTEMPF, y = b_crime_weather$Total.Incidents, xlim = c(0,120), ylim = c(0,250))
+lm_crime_baltimore <- lm(Total.Incidents ~ HOURLYDRYBULBTEMPF,b_crime_weather)
 summary(lm_crime_baltimore)
 
-cor(b_crime$Total.Incidents, b_crime$TMAX)
-#The correlation between max temperature and crimes committed in Baltimore is 0.9
+cor(b_crime_weather$Total.Incidents, b_crime_weather$HOURLYDRYBULBTEMPF)
+#The correlation between max temperature and crimes committed in Baltimore is 0.5291
 unique(b_crime_type_by_date$Description)
-for(i in unique(b_crime_type_by_date$Description))
-{b_agg_assault <- merge(b_crime_type_by_date[b_crime_type_by_date$Description == i,], weather_b,
-                       by.x = 'CrimeDate', by.y = 'DATE')
-print("Assault:\n")
-print(i)
-agg_assault_by_temp <- aggregate(Total.Incidents ~ TMAX, b_agg_assault, mean)
-plot(x = agg_assault_by_temp$TMAX, y = agg_assault_by_temp$Total.Incidents, main = i)
-}
+
+b_crime_types <- aggregate(Total.Incidents ~ Description, baltimore, sum)
+b_crime_types$Description[b_crime_types$Total.Incidents < 15000] <- 'Others'
+b_crime_type <- aggregate(Total.Incidents ~ Description, b_crime_types, sum)
+
+b_crime_type_weather <- merge(b_crime_type_by_date, weather_b, by.x = 'CrimeDate', by.y = 'DATE')
+plot(x = b_crime_type_weather$HOURLYDRYBULBTEMPF, y = b_crime_type_weather$Total.Incidents, col = factor(b_crime_type_weather$Description[b_crime_type_weather$Description %in% b_crime_type$Description]), ylim = c(0,50))
+
 rm(baltimore)
 
 #Vancouver
